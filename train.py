@@ -65,11 +65,13 @@ def main(args):
     # Training loop
     epoch_desc = 'Epoch {{0: <{0}d}}'.format(1 + int(math.log10(args.num_epochs)))
     for epoch in range(args.num_epochs):
+        metalearner.training = True
         metalearner.train(meta_train_dataloader,
                           max_batches=args.num_batches,
                           verbose=args.verbose,
                           desc='Training',
                           leave=False)
+        metalearner.training = False
         results = metalearner.evaluate(meta_val_dataloader,
                                        max_batches=args.num_batches,
                                        verbose=args.verbose,

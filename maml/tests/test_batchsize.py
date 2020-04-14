@@ -37,10 +37,12 @@ def test_batchsize():
     for batch in meta_test_dataloader:
         batch = tensors_to_device(batch, device='cpu')
         for task_id, (train_inputs, train_targets, test_inputs, test_targets) in enumerate(zip(*batch['train'], *batch['test'])):
+            metalearner.model.train(True)
             params, _ = metalearner.adapt(train_inputs, train_targets,
                                                     is_classification_task=True,
                                                     num_adaptation_steps=metalearner.num_adaptation_steps,
                                                     step_size=metalearner.step_size, first_order=metalearner.first_order)
+            metalearner.model.train(False)
             test_logits_1 = metalearner.model(test_inputs, params=params)
             for idx in range(test_inputs.shape[0]):
                 test_logits_2 = metalearner.model(test_inputs[idx:idx + 1, ...], params=params)

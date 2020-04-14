@@ -76,6 +76,7 @@ class ModelAgnosticMetaLearning(object):
         self.scheduler = scheduler
         self.loss_function = loss_function
         self.device = device
+        self.training = True
 
         if per_param_step_size:
             self.step_size = OrderedDict((name, torch.tensor(step_size,
@@ -118,6 +119,7 @@ class ModelAgnosticMetaLearning(object):
         mean_outer_loss = torch.tensor(0., device=self.device)
         for task_id, (train_inputs, train_targets, test_inputs, test_targets) \
                 in enumerate(zip(*batch['train'], *batch['test'])):
+            self.model.train(True)
             params, adaptation_results = self.adapt(train_inputs, train_targets,
                 is_classification_task=is_classification_task,
                 num_adaptation_steps=self.num_adaptation_steps,
@@ -127,7 +129,8 @@ class ModelAgnosticMetaLearning(object):
             if is_classification_task:
                 results['accuracies_before'][task_id] = adaptation_results['accuracy_before']
 
-            with torch.set_grad_enabled(self.model.training):
+            with torch.set_grad_enabled(self.training):
+                self.model.train(False)
                 test_logits = self.model(test_inputs, params=params)
                 outer_loss = self.loss_function(test_logits, test_targets)
                 results['outer_losses'][task_id] = outer_loss.item()
@@ -162,7 +165,7 @@ class ModelAgnosticMetaLearning(object):
             self.model.zero_grad()
             params = update_parameters(self.model, inner_loss,
                 step_size=step_size, params=params,
-                first_order=(not self.model.training) or first_order)
+                first_order=(not self.training) or first_order)
 
         return params, results
 
@@ -184,7 +187,6 @@ class ModelAgnosticMetaLearning(object):
                 '(eg. `{0}(model, optimizer=torch.optim.SGD(model.'
                 'parameters(), lr=0.01), ...).'.format(__class__.__name__))
         num_batches = 0
-        self.model.train()
         while num_batches < max_batches:
             for batch in dataloader:
                 if num_batches >= max_batches:
