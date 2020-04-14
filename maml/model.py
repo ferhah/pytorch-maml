@@ -9,7 +9,7 @@ def conv_block(in_channels, out_channels, **kwargs):
     return MetaSequential(OrderedDict([
         ('conv', MetaConv2d(in_channels, out_channels, **kwargs)),
         ('norm', nn.BatchNorm2d(out_channels, momentum=1.,
-            track_running_stats=False)),
+            track_running_stats=True)),
         ('relu', nn.ReLU()),
         ('pool', nn.MaxPool2d(2))
     ]))
